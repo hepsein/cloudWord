@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './VideoBackground.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
+const PUBLIC_URL = process.env.PUBLIC_URL || '';
 
 const VideoBackground = () => {
   const [videoPath, setVideoPath] = useState('');
@@ -12,11 +13,10 @@ const VideoBackground = () => {
       .then(res => res.json())
       .then(data => {
         let path = data.videoPath;
-        // Si le chemin commence par /videos/, on l'utilise tel quel (servi par le frontend)
-        if (path && path.startsWith('/videos/')) {
-          setVideoPath(path);
+        if (path && path.startsWith('/')) {
+          setVideoPath(PUBLIC_URL + path);
         } else {
-          setVideoPath(data.videoPath);
+          setVideoPath(path);
         }
         console.log('Chemin vidéo utilisé:', path);
       })

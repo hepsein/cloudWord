@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import VideoBackground from './components/VideoBackground';
 import WordCloud from './components/WordCloud';
 import './App.css';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -104,64 +104,70 @@ function WordInputPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(120deg, #232526 0%, #414345 100%)',
+      background: 'linear-gradient(120deg, #f8fafc 0%, #e0e7ef 100%)',
       position: 'relative',
       overflow: 'hidden',
+      fontFamily: 'Inter, Segoe UI, Arial, sans-serif',
     }}>
-      <Link to="/" style={{position:'absolute',top:32,left:32,color:'#fff',textDecoration:'none',fontWeight:'bold',fontSize:'1.1rem',background:'#2228',padding:'0.5em 1.2em',borderRadius:8,boxShadow:'0 2px 8px #0003'}}>← Retour</Link>
       <div style={{
-        background: 'rgba(255,255,255,0.07)',
-        borderRadius: 18,
-        boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        border: '1px solid rgba(255,255,255,0.18)',
-        padding: '48px 32px 36px 32px',
+        background: 'rgba(255,255,255,0.92)',
+        borderRadius: 20,
+        boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.10)',
+        border: '1px solid #e0e7ef',
+        padding: '44px 32px 36px 32px',
         minWidth: 340,
+        maxWidth: 380,
+        width: '100%',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: 24,
       }}>
-        <div style={{fontSize:'2rem',color:'#fff',marginBottom:8,textShadow:'0 2px 8px #000'}}>Quel mot vous inspire ummanité ?</div>
-        <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:18,width:'100%'}}>
+        <div style={{fontSize:'1.7rem',color:'#222',marginBottom:8,fontWeight:600,letterSpacing:'.01em',textAlign:'center'}}>Quel mot vous inspire ummanité&nbsp;?</div>
+        <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:18,width:'100%'}} autoComplete="off">
           <input
             type="text"
             value={word}
             onChange={e=>setWord(e.target.value)}
             placeholder="Votre mot..."
             style={{
-              fontSize:'1.3rem',
-              padding:'0.7em 1.2em',
-              borderRadius:10,
-              border:'none',
+              fontSize:'1.15rem',
+              padding:'0.8em 1.2em',
+              borderRadius:12,
+              border:'1.5px solid #e0e7ef',
               outline:'none',
               minWidth:220,
-              background:'#fff',
+              background:'#f8fafc',
               boxShadow:'0 2px 8px #0001',
-              marginBottom:4
+              marginBottom:4,
+              transition:'border 0.2s',
+              fontWeight:500,
+              color:'#222',
             }}
             disabled={loading}
             maxLength={32}
             autoFocus
+            onFocus={e => e.target.style.border = '1.5px solid #a3bffa'}
+            onBlur={e => e.target.style.border = '1.5px solid #e0e7ef'}
           />
           <button type="submit" style={{
-            fontSize:'1.1rem',
-            padding:'0.6em 2.2em',
-            borderRadius:10,
+            fontSize:'1.08rem',
+            padding:'0.7em 2.2em',
+            borderRadius:12,
             border:'none',
-            background:'linear-gradient(90deg,#ffb347,#ffcc33)',
+            background:'linear-gradient(90deg,#a3bffa,#fbc2eb)',
             color:'#222',
             fontWeight:'bold',
             cursor:'pointer',
-            boxShadow:'0 2px 8px #0002',
+            boxShadow:'0 2px 8px #0001',
             letterSpacing:'0.03em',
-            marginTop:4
+            marginTop:4,
+            transition:'background 0.2s',
           }} disabled={loading}>
             {loading ? 'Envoi...' : 'Envoyer'}
           </button>
-          {error && <div style={{color:'#ff4d4f',marginTop:8,fontWeight:'bold'}}>{error}</div>}
-          {success && <div style={{color:'#2ecc40',marginTop:8,fontWeight:'bold',fontSize:'1.1rem',background:'#fff8',padding:'0.5em 1em',borderRadius:8,boxShadow:'0 2px 8px #0001'}}>Merci pour votre mot !</div>}
+          {error && <div style={{color:'#ff4d4f',marginTop:8,fontWeight:'bold',fontSize:'1rem'}}>{error}</div>}
+          {success && <div style={{color:'#2ecc40',marginTop:8,fontWeight:'bold',fontSize:'1.08rem',background:'#e6ffed',padding:'0.5em 1em',borderRadius:8,boxShadow:'0 2px 8px #0001'}}>Merci pour votre mot !</div>}
         </form>
       </div>
     </div>
