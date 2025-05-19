@@ -81,12 +81,14 @@ app.get('/api/config', (req, res) => {
 });
 
 // Démarrage du serveur
-async function startServer() {
-    await loadPredefinedWords();
-    initializeWords();
-    app.listen(PORT, () => {
-        console.log(`Serveur démarré sur le port ${PORT}`);
-    });
+async function prepareApp() {
+    if (predefinedWords.length === 0) {
+        await loadPredefinedWords();
+        initializeWords();
+    }
 }
 
-startServer(); 
+module.exports = async (req, res) => {
+    await prepareApp();
+    app(req, res);
+}; 
