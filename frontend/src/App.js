@@ -3,7 +3,7 @@ import VideoBackground from './components/VideoBackground';
 import WordCloud from './components/WordCloud';
 import './App.css';
 
-const API_URL = 'http://localhost:3001';
+const API_URL = process.env.REACT_APP_API_URL;
 
 function App() {
   const [words, setWords] = useState([]);
