@@ -13,14 +13,13 @@ function distance(a, b) {
   return { dx: Math.abs(dx), dy: Math.abs(dy) };
 }
 
-function getNonOverlappingPositions(count, radius = 25) {
-  const positions = [];
-  for (let i = 0; i < count; i++) {
+function getNonOverlappingPositions(count, radius = 25, existing = []) {
+  const positions = [...existing];
+  for (let i = existing.length; i < count; i++) {
     let pos, attempts = 0;
     do {
       const angle = Math.random() * 2 * Math.PI;
       const r = Math.random() * radius;
-      // Ajout d'un petit décalage vertical aléatoire pour éviter les touches de points/jambages
       const yJitter = (Math.random() - 0.5) * 4; // +/-2%
       pos = {
         x: 50 + r * Math.cos(angle),
@@ -38,12 +37,45 @@ function getNonOverlappingPositions(count, radius = 25) {
   return positions.map(p => ({ x: `${p.x}%`, y: `${p.y}%` }));
 }
 
+// Utilitaire pour générer une clé unique par mot (texte + timestamp)
+function getWordKey(word) {
+  return `${word.text}_${word.timestamp || ''}`;
+}
+
 const WordCloud = ({ words }) => {
-  // Génère des positions non chevauchantes à chaque rendu
-  const positions = React.useMemo(
-    () => getNonOverlappingPositions(words.length, 25),
-    [words]
-  );
+  // On mémorise les positions par clé unique de mot
+  const positionsRef = React.useRef({});
+  const prevKeysRef = React.useRef([]);
+
+  React.useEffect(() => {
+    const keys = words.map(getWordKey);
+    const prevKeys = prevKeysRef.current;
+    // On garde les positions des mots inchangés
+    const newPositions = {};
+    let existingPositions = [];
+    keys.forEach((key, i) => {
+      if (positionsRef.current[key]) {
+        newPositions[key] = positionsRef.current[key];
+        existingPositions.push({
+          x: parseFloat(positionsRef.current[key].x),
+          y: parseFloat(positionsRef.current[key].y)
+        });
+      }
+    });
+    // Pour les nouveaux mots ou ceux dont le timestamp a changé, on génère une nouvelle position
+    const missingCount = keys.length - existingPositions.length;
+    const generated = getNonOverlappingPositions(keys.length, 25, existingPositions);
+    keys.forEach((key, i) => {
+      if (!newPositions[key]) {
+        newPositions[key] = generated[i];
+      }
+    });
+    positionsRef.current = newPositions;
+    prevKeysRef.current = keys;
+  }, [words]);
+
+  const keys = words.map(getWordKey);
+  const positions = keys.map(key => positionsRef.current[key] || { x: '50%', y: '50%' });
 
   return (
     <div className="word-cloud">
@@ -52,7 +84,7 @@ const WordCloud = ({ words }) => {
           const pos = positions[index];
           return (
             <motion.div
-              key={word.text}
+              key={getWordKey(word)}
               className="word"
               initial={{ opacity: 0, scale: 0.8, filter: 'blur(20px)' }}
               animate={{
