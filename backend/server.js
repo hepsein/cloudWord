@@ -52,6 +52,7 @@ function initializeWords() {
 // Remplacement automatique des mots après timeout
 function checkTimeouts() {
     const now = Date.now();
+    let changed = false;
     for (let i = 0; i < activeWords.length; i++) {
         if (now - activeWords[i].timestamp > WORD_TIMEOUT * 1000) {
             // Remplacer par un mot prédéfini aléatoire différent
@@ -59,9 +60,14 @@ function checkTimeouts() {
             const candidates = predefinedWords.filter(w => !used.has(w));
             const newWord = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : predefinedWords[Math.floor(Math.random() * predefinedWords.length)];
             activeWords[i] = { text: newWord, timestamp: now };
+            changed = true;
         }
     }
+    if (changed) notifyWordsChanged();
 }
+
+// Timer asynchrone pour vérifier les expirations toutes les secondes
+setInterval(checkTimeouts, 1000);
 
 // Endpoint pour recevoir un nouveau mot
 app.post('/api/word', (req, res) => {
@@ -69,20 +75,26 @@ app.post('/api/word', (req, res) => {
     if (!word || typeof word !== 'string') {
         return res.status(400).json({ error: 'Mot invalide' });
     }
-    // Supprimer le mot le plus ancien
-    activeWords.shift();
-    // Ajouter le nouveau mot
-    activeWords.push({
+    // Trouver l'index du mot le plus ancien
+    let oldestIndex = 0;
+    let oldestTimestamp = activeWords[0]?.timestamp || 0;
+    for (let i = 1; i < activeWords.length; i++) {
+        if (activeWords[i].timestamp < oldestTimestamp) {
+            oldestTimestamp = activeWords[i].timestamp;
+            oldestIndex = i;
+        }
+    }
+    // Remplacer le mot le plus ancien par le nouveau mot
+    activeWords[oldestIndex] = {
         text: word,
         timestamp: Date.now()
-    });
+    };
     notifyWordsChanged();
     res.json({ success: true, activeWords });
 });
 
 // Endpoint pour obtenir les mots actifs (long polling)
 app.get('/api/words', async (req, res) => {
-    checkTimeouts();
     const since = parseInt(req.query.since || '0', 10);
     const currentWords = activeWords.map(w => ({ ...w }));
     const currentLastChange = Math.max(...currentWords.map(w => w.timestamp), lastChangeTimestamp);
