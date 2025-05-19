@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import VideoBackground from './components/VideoBackground';
 import WordCloud from './components/WordCloud';
 import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 function App() {
   const [words, setWords] = useState([]);
-  const [page, setPage] = useState('cloud'); // 'cloud' ou 'input'
   const lastChangeRef = useRef(0);
   const pollingRef = useRef(false);
 
@@ -25,7 +25,6 @@ function App() {
         const res = await fetch(`${API_URL}/api/words?since=${since}`);
         const data = await res.json();
         if (data && data.words) {
-          // On ne met à jour que si la liste a changé (texte ou timestamp)
           setWords(prevWords => {
             if (!areWordsEqual(prevWords, data.words)) {
               return data.words;
@@ -35,24 +34,21 @@ function App() {
           lastChangeRef.current = data.lastChange || Date.now();
         }
       } catch (e) {
-        // Attendre un peu avant de relancer en cas d'erreur
         await new Promise(r => setTimeout(r, 1000));
       }
     }
   };
 
   return (
-    <div className="app">
-      <VideoBackground />
-      {page === 'cloud' ? (
-        <>
-          <button style={{position:'absolute',top:20,right:20,zIndex:10}} onClick={()=>setPage('input')}>Ajouter un mot</button>
-          <WordCloud words={words} />
-        </>
-      ) : (
-        <WordInputPage onBack={()=>setPage('cloud')} onWordAdded={()=>{}} />
-      )}
-    </div>
+    <Router>
+      <div className="app">
+        <VideoBackground />
+        <Routes>
+          <Route path="/" element={<WordCloud words={words} />} />
+          <Route path="/ajouter" element={<WordInputPage />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
@@ -64,7 +60,7 @@ function areWordsEqual(a, b) {
   return true;
 }
 
-function WordInputPage({ onBack, onWordAdded }) {
+function WordInputPage() {
   const [word, setWord] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -88,7 +84,6 @@ function WordInputPage({ onBack, onWordAdded }) {
       if (!res.ok) throw new Error('Erreur lors de l\'ajout du mot');
       setSuccess(true);
       setWord('');
-      onWordAdded && onWordAdded();
     } catch (err) {
       setError('Erreur lors de l\'ajout du mot.');
     } finally {
