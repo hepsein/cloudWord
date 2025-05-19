@@ -43,39 +43,34 @@ function getWordKey(word) {
 }
 
 const WordCloud = ({ words }) => {
-  // On mémorise les positions par clé unique de mot
-  const positionsRef = React.useRef({});
-  const prevKeysRef = React.useRef([]);
-
-  React.useEffect(() => {
+  // Génère et mémorise les positions pour chaque mot (texte+timestamp)
+  const positions = React.useMemo(() => {
+    // On récupère les anciennes positions si elles existent
+    const prev = WordCloud.prevPositions || {};
     const keys = words.map(getWordKey);
-    const prevKeys = prevKeysRef.current;
     // On garde les positions des mots inchangés
+    const existing = [];
     const newPositions = {};
-    let existingPositions = [];
     keys.forEach((key, i) => {
-      if (positionsRef.current[key]) {
-        newPositions[key] = positionsRef.current[key];
-        existingPositions.push({
-          x: parseFloat(positionsRef.current[key].x),
-          y: parseFloat(positionsRef.current[key].y)
+      if (prev[key]) {
+        newPositions[key] = prev[key];
+        existing.push({
+          x: parseFloat(prev[key].x),
+          y: parseFloat(prev[key].y)
         });
       }
     });
-    // Pour les nouveaux mots ou ceux dont le timestamp a changé, on génère une nouvelle position
-    const missingCount = keys.length - existingPositions.length;
-    const generated = getNonOverlappingPositions(keys.length, 25, existingPositions);
+    // Générer les positions manquantes
+    const generated = getNonOverlappingPositions(keys.length, 25, existing);
     keys.forEach((key, i) => {
       if (!newPositions[key]) {
         newPositions[key] = generated[i];
       }
     });
-    positionsRef.current = newPositions;
-    prevKeysRef.current = keys;
+    // Mémoriser pour le prochain rendu
+    WordCloud.prevPositions = newPositions;
+    return keys.map(key => newPositions[key]);
   }, [words]);
-
-  const keys = words.map(getWordKey);
-  const positions = keys.map(key => positionsRef.current[key] || { x: '50%', y: '50%' });
 
   return (
     <div className="word-cloud">
