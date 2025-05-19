@@ -2,11 +2,22 @@ import React, { useState, useEffect, useRef } from 'react';
 import VideoBackground from './components/VideoBackground';
 import WordCloud from './components/WordCloud';
 import './App.css';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/ajout" element={<WordInputPage />} />
+        <Route path="/" element={<MainCloudPage />} />
+      </Routes>
+    </Router>
+  );
+}
+
+function MainCloudPage() {
   const [words, setWords] = useState([]);
   const lastChangeRef = useRef(0);
   const pollingRef = useRef(false);
@@ -40,15 +51,11 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="app">
-        <VideoBackground />
-        <Routes>
-          <Route path="/" element={<WordCloud words={words} />} />
-          <Route path="/ajouter" element={<WordInputPage />} />
-        </Routes>
-      </div>
-    </Router>
+    <div className="app">
+      <VideoBackground />
+      <WordCloud words={words} />
+      <Link to="/ajout" style={{position:'absolute',bottom:24,right:24,zIndex:10,background:'#fff',color:'#222',padding:'0.7em 1.5em',borderRadius:8,fontWeight:'bold',textDecoration:'none',boxShadow:'0 2px 8px #0002'}}>Ajouter un mot</Link>
+    </div>
   );
 }
 
@@ -93,6 +100,7 @@ function WordInputPage() {
 
   return (
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100vh',zIndex:10,position:'relative'}}>
+      <Link to="/" style={{position:'absolute',top:20,left:20,color:'#fff',textDecoration:'underline',fontWeight:'bold'}}>Retour</Link>
       <div style={{fontSize:'2rem',color:'white',marginBottom:32,textShadow:'0 2px 8px #000'}}>Quel mot vous inspire ummanité ?</div>
       <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16}}>
         <input
