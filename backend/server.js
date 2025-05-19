@@ -19,6 +19,16 @@ app.use(express.json());
 let activeWords = [];
 let predefinedWords = [];
 
+// Ajout pour le long polling
+let lastChangeTimestamp = Date.now();
+let wordsListeners = [];
+
+function notifyWordsChanged() {
+    lastChangeTimestamp = Date.now();
+    wordsListeners.forEach(listener => listener());
+    wordsListeners = [];
+}
+
 // Chargement des mots prédéfinis
 async function loadPredefinedWords() {
     try {
@@ -66,13 +76,34 @@ app.post('/api/word', (req, res) => {
         text: word,
         timestamp: Date.now()
     });
+    notifyWordsChanged();
     res.json({ success: true, activeWords });
 });
 
-// Endpoint pour obtenir les mots actifs
-app.get('/api/words', (req, res) => {
+// Endpoint pour obtenir les mots actifs (long polling)
+app.get('/api/words', async (req, res) => {
     checkTimeouts();
-    res.json(activeWords);
+    const since = parseInt(req.query.since || '0', 10);
+    const currentWords = activeWords.map(w => ({ ...w }));
+    const currentLastChange = Math.max(...currentWords.map(w => w.timestamp), lastChangeTimestamp);
+    if (since < currentLastChange) {
+        return res.json({ words: currentWords, lastChange: currentLastChange });
+    }
+    // Sinon, attendre un changement ou timeout
+    let finished = false;
+    const timeout = setTimeout(() => {
+        if (!finished) {
+            finished = true;
+            res.json({ words: activeWords.map(w => ({ ...w })), lastChange: Math.max(...activeWords.map(w => w.timestamp), lastChangeTimestamp) });
+        }
+    }, WORD_TIMEOUT * 1000);
+    wordsListeners.push(() => {
+        if (!finished) {
+            finished = true;
+            clearTimeout(timeout);
+            res.json({ words: activeWords.map(w => ({ ...w })), lastChange: Math.max(...activeWords.map(w => w.timestamp), lastChangeTimestamp) });
+        }
+    });
 });
 
 // Endpoint pour obtenir la config (chemin vidéo)
