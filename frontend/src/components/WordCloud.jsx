@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './WordCloud.css';
 
@@ -14,9 +14,9 @@ function distance(a, b) {
   return { dx: Math.abs(dx), dy: Math.abs(dy) };
 }
 
-function getNonOverlappingPositions(count, radius = 25, existing = []) {
-  const positions = [...existing];
-  for (let i = existing.length; i < count; i++) {
+function getNonOverlappingPositions(count, radius = 25, reserved = []) {
+  const positions = [...reserved];
+  for (let i = reserved.length; i < count; i++) {
     let pos, attempts = 0;
     do {
       const angle = Math.random() * 2 * Math.PI;
@@ -44,58 +44,58 @@ function getWordKey(word) {
 }
 
 const WordCloud = ({ words }) => {
-  // Mémorise toutes les positions visibles (présentes ou en sortie)
-  const visiblePositionsRef = React.useRef({});
-  const exitingTimeoutsRef = React.useRef({});
+  // Réserve toutes les positions visibles ou en sortie
+  const reservedPositionsRef = useRef({}); // { key: {x, y} }
+  const exitTimeoutsRef = useRef({});
 
-  // Met à jour la liste des positions visibles à chaque changement de mots
-  React.useEffect(() => {
+  // Met à jour les positions réservées à chaque changement de mots
+  useEffect(() => {
     const keys = words.map(getWordKey);
     // Ajoute les nouveaux mots
     keys.forEach((key, i) => {
-      if (!visiblePositionsRef.current[key] && WordCloud.prevPositions && WordCloud.prevPositions[key]) {
-        visiblePositionsRef.current[key] = WordCloud.prevPositions[key];
+      if (!reservedPositionsRef.current[key] && WordCloud.prevPositions && WordCloud.prevPositions[key]) {
+        reservedPositionsRef.current[key] = WordCloud.prevPositions[key];
       }
     });
     // Supprime les mots qui ne sont plus présents ni en sortie
-    Object.keys(visiblePositionsRef.current).forEach(key => {
-      if (!keys.includes(key) && !exitingTimeoutsRef.current[key]) {
-        delete visiblePositionsRef.current[key];
+    Object.keys(reservedPositionsRef.current).forEach(key => {
+      if (!keys.includes(key) && !exitTimeoutsRef.current[key]) {
+        delete reservedPositionsRef.current[key];
       }
     });
   }, [words]);
 
   // Génère et mémorise les positions pour chaque mot (texte+timestamp)
-  const positions = React.useMemo(() => {
+  const positions = useMemo(() => {
     const prev = WordCloud.prevPositions || {};
     const keys = words.map(getWordKey);
     // On garde les positions des mots inchangés
-    const existing = [];
+    const reserved = [];
     const newPositions = {};
     keys.forEach((key, i) => {
       if (prev[key]) {
         newPositions[key] = prev[key];
-        existing.push({
+        reserved.push({
           x: parseFloat(prev[key].x),
           y: parseFloat(prev[key].y)
         });
       }
     });
-    // Ajouter toutes les positions visibles (présentes ou en sortie)
-    Object.values(visiblePositionsRef.current).forEach(pos => {
-      existing.push({ x: parseFloat(pos.x), y: parseFloat(pos.y) });
+    // Ajouter toutes les positions réservées (présentes ou en sortie)
+    Object.values(reservedPositionsRef.current).forEach(pos => {
+      reserved.push({ x: parseFloat(pos.x), y: parseFloat(pos.y) });
     });
     // Générer les positions manquantes
-    const generated = getNonOverlappingPositions(keys.length, 25, existing);
+    const generated = getNonOverlappingPositions(keys.length, 25, reserved);
     keys.forEach((key, i) => {
       if (!newPositions[key]) {
         newPositions[key] = generated[i];
       }
     });
     WordCloud.prevPositions = newPositions;
-    // Met à jour les positions visibles
+    // Met à jour les positions réservées
     keys.forEach((key, i) => {
-      visiblePositionsRef.current[key] = newPositions[key];
+      reservedPositionsRef.current[key] = newPositions[key];
     });
     return keys.map(key => newPositions[key]);
   }, [words]);
@@ -103,14 +103,14 @@ const WordCloud = ({ words }) => {
   // Gestion de la sortie d'un mot
   const handleExit = (word, pos) => {
     const key = getWordKey(word);
-    visiblePositionsRef.current[key] = pos;
-    // On garde la position visible pendant toute la durée de l'animation
-    if (exitingTimeoutsRef.current[key]) {
-      clearTimeout(exitingTimeoutsRef.current[key]);
+    reservedPositionsRef.current[key] = pos;
+    // On garde la position réservée pendant toute la durée de l'animation
+    if (exitTimeoutsRef.current[key]) {
+      clearTimeout(exitTimeoutsRef.current[key]);
     }
-    exitingTimeoutsRef.current[key] = setTimeout(() => {
-      delete visiblePositionsRef.current[key];
-      delete exitingTimeoutsRef.current[key];
+    exitTimeoutsRef.current[key] = setTimeout(() => {
+      delete reservedPositionsRef.current[key];
+      delete exitTimeoutsRef.current[key];
     }, EXIT_DURATION + 10);
   };
 
