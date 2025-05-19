@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
 function App() {
@@ -8,13 +8,7 @@ function App() {
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
-  useEffect(() => {
-    fetchWords();
-    const interval = setInterval(fetchWords, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchWords = async () => {
+  const fetchWords = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/api/words`);
       const data = await response.json();
@@ -22,7 +16,13 @@ function App() {
     } catch (error) {
       console.error('Erreur lors de la récupération des mots:', error);
     }
-  };
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchWords();
+    const interval = setInterval(fetchWords, 5000);
+    return () => clearInterval(interval);
+  }, [fetchWords]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
