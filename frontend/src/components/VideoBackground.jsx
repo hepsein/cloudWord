@@ -11,8 +11,14 @@ const VideoBackground = () => {
     fetch(`${API_URL}/api/config`)
       .then(res => res.json())
       .then(data => {
-        setVideoPath(data.videoPath);
-        console.log('Chemin vidéo utilisé:', data.videoPath);
+        let path = data.videoPath;
+        // Si le chemin commence par /videos/, on l'utilise tel quel (servi par le frontend)
+        if (path && path.startsWith('/videos/')) {
+          setVideoPath(path);
+        } else {
+          setVideoPath(data.videoPath);
+        }
+        console.log('Chemin vidéo utilisé:', path);
       })
       .catch(() => setError(true));
   }, []);
