@@ -6,6 +6,7 @@ import './WordCloud.css';
 const COLLISION_RADIUS_X = 13;
 const COLLISION_RADIUS_Y = 18; // plus grand pour éviter les touches de jambages
 const MAX_ATTEMPTS = 40;
+const EXIT_DURATION = 500; // ms, doit correspondre à la durée de l'animation exit
 
 function distance(a, b) {
   const dx = parseFloat(a.x) - parseFloat(b.x);
@@ -43,9 +44,29 @@ function getWordKey(word) {
 }
 
 const WordCloud = ({ words }) => {
+  // Mémorise toutes les positions visibles (présentes ou en sortie)
+  const visiblePositionsRef = React.useRef({});
+  const exitingTimeoutsRef = React.useRef({});
+
+  // Met à jour la liste des positions visibles à chaque changement de mots
+  React.useEffect(() => {
+    const keys = words.map(getWordKey);
+    // Ajoute les nouveaux mots
+    keys.forEach((key, i) => {
+      if (!visiblePositionsRef.current[key] && WordCloud.prevPositions && WordCloud.prevPositions[key]) {
+        visiblePositionsRef.current[key] = WordCloud.prevPositions[key];
+      }
+    });
+    // Supprime les mots qui ne sont plus présents ni en sortie
+    Object.keys(visiblePositionsRef.current).forEach(key => {
+      if (!keys.includes(key) && !exitingTimeoutsRef.current[key]) {
+        delete visiblePositionsRef.current[key];
+      }
+    });
+  }, [words]);
+
   // Génère et mémorise les positions pour chaque mot (texte+timestamp)
   const positions = React.useMemo(() => {
-    // On récupère les anciennes positions si elles existent
     const prev = WordCloud.prevPositions || {};
     const keys = words.map(getWordKey);
     // On garde les positions des mots inchangés
@@ -60,6 +81,10 @@ const WordCloud = ({ words }) => {
         });
       }
     });
+    // Ajouter toutes les positions visibles (présentes ou en sortie)
+    Object.values(visiblePositionsRef.current).forEach(pos => {
+      existing.push({ x: parseFloat(pos.x), y: parseFloat(pos.y) });
+    });
     // Générer les positions manquantes
     const generated = getNonOverlappingPositions(keys.length, 25, existing);
     keys.forEach((key, i) => {
@@ -67,19 +92,37 @@ const WordCloud = ({ words }) => {
         newPositions[key] = generated[i];
       }
     });
-    // Mémoriser pour le prochain rendu
     WordCloud.prevPositions = newPositions;
+    // Met à jour les positions visibles
+    keys.forEach((key, i) => {
+      visiblePositionsRef.current[key] = newPositions[key];
+    });
     return keys.map(key => newPositions[key]);
   }, [words]);
+
+  // Gestion de la sortie d'un mot
+  const handleExit = (word, pos) => {
+    const key = getWordKey(word);
+    visiblePositionsRef.current[key] = pos;
+    // On garde la position visible pendant toute la durée de l'animation
+    if (exitingTimeoutsRef.current[key]) {
+      clearTimeout(exitingTimeoutsRef.current[key]);
+    }
+    exitingTimeoutsRef.current[key] = setTimeout(() => {
+      delete visiblePositionsRef.current[key];
+      delete exitingTimeoutsRef.current[key];
+    }, EXIT_DURATION + 10);
+  };
 
   return (
     <div className="word-cloud">
       <AnimatePresence>
         {words.map((word, index) => {
           const pos = positions[index];
+          const key = getWordKey(word);
           return (
             <motion.div
-              key={getWordKey(word)}
+              key={key}
               className="word"
               initial={{ opacity: 0, scale: 0.8, filter: 'blur(20px)' }}
               animate={{
@@ -90,8 +133,9 @@ const WordCloud = ({ words }) => {
                 left: pos.x
               }}
               exit={{ opacity: 0, scale: 0.8, filter: 'blur(20px)' }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
+              transition={{ duration: EXIT_DURATION / 1000, ease: 'easeOut' }}
               style={{ position: 'absolute', transform: 'translate(-50%, -50%)' }}
+              onExit={() => handleExit(word, pos)}
             >
               {word.text}
             </motion.div>
