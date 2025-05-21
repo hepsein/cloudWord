@@ -85,9 +85,11 @@ const WordCloud = ({ words }) => {
   return (
     <motion.div
       className="word-cloud"
-      animate={{ x: floatAnim.x, y: floatAnim.y }}
-      transition={{ duration: 4, ease: 'easeInOut' }}
+      style={{
+        transform: `translate(-50%, -50%) translate(${floatAnim.x}px, ${floatAnim.y}px)`
+      }}
       key={floatKey}
+      transition={{ duration: 4, ease: 'easeInOut' }}
     >
       <AnimatePresence>
         {words.map((word, index) => {
