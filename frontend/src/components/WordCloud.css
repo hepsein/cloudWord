@@ -13,7 +13,7 @@
 .word {
   position: absolute;
   transform: translate(-50%, -50%);
-  color: white;
+  color: #d3a46c;
   font-size: 2.5rem;
   font-weight: bold;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.5),
