@@ -1,9 +1,10 @@
 .word-cloud {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 50%;
+  left: 50%;
+  width: 60vw;
+  height: 40vh;
+  transform: translate(-50%, -50%);
   z-index: 2;
   display: flex;
   justify-content: center;
@@ -13,7 +14,7 @@
 .word {
   position: absolute;
   transform: translate(-50%, -50%);
-  color: #d3a46c;
+  color: #1a9ad7;
   font-size: 2.5rem;
   font-weight: bold;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.5),
