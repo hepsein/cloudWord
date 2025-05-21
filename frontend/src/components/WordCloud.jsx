@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './WordCloud.css';
 
@@ -44,6 +44,24 @@ const WordCloud = ({ words }) => {
   const positionsRef = useRef([]); // [{x, y}]
   const keysRef = useRef([]); // [key]
 
+  // Animation flottante aléatoire
+  const [floatKey, setFloatKey] = useState(0);
+  const [floatAnim, setFloatAnim] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    let timeout;
+    function randomFloat() {
+      // Mouvement aléatoire dans un carré de 40px autour du centre
+      const x = Math.random() * 40 - 20;
+      const y = Math.random() * 40 - 20;
+      setFloatAnim({ x, y });
+      setFloatKey(k => k + 1);
+      timeout = setTimeout(randomFloat, 4000 + Math.random() * 2000);
+    }
+    randomFloat();
+    return () => clearTimeout(timeout);
+  }, []);
+
   useEffect(() => {
     const newPositions = [...positionsRef.current];
     const newKeys = [...keysRef.current];
@@ -67,9 +85,9 @@ const WordCloud = ({ words }) => {
   return (
     <motion.div
       className="word-cloud"
-      initial={{ y: 0 }}
-      animate={{ y: [0, -12, 0, 12, 0] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      animate={{ x: floatAnim.x, y: floatAnim.y }}
+      transition={{ duration: 4, ease: 'easeInOut' }}
+      key={floatKey}
     >
       <AnimatePresence>
         {words.map((word, index) => {
