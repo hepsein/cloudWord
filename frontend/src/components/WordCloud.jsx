@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import './WordCloud.css';
 
 // Rayon de collision horizontal et vertical en %
-const COLLISION_RADIUS_X = 13;
-const COLLISION_RADIUS_Y = 18; // plus grand pour éviter les touches de jambages
+const COLLISION_RADIUS_X = 18;
+const COLLISION_RADIUS_Y = 24;
 const MAX_ATTEMPTS = 40;
 const EXIT_DURATION = 500; // ms, doit correspondre à la durée de l'animation exit
 
@@ -65,7 +65,12 @@ const WordCloud = ({ words }) => {
   }, [words]);
 
   return (
-    <div className="word-cloud">
+    <motion.div
+      className="word-cloud"
+      initial={{ y: 0 }}
+      animate={{ y: [0, -12, 0, 12, 0] }}
+      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+    >
       <AnimatePresence>
         {words.map((word, index) => {
           const pos = positionsRef.current[index] || { x: '50%', y: '50%' };
@@ -84,14 +89,14 @@ const WordCloud = ({ words }) => {
               }}
               exit={{ opacity: 0, scale: 0.8, filter: 'blur(20px)' }}
               transition={{ duration: EXIT_DURATION / 1000, ease: 'easeOut' }}
-              style={{ position: 'absolute', transform: 'translate(-50%, -50%)' }}
+              style={{ position: 'absolute', transform: 'translate(-50%, -50%)', fontSize: '1.7rem' }}
             >
               {word.text}
             </motion.div>
           );
         })}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 

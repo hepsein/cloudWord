@@ -51,8 +51,7 @@ function MainCloudPage() {
   };
 
   return (
-    <div className="app">
-      <VideoBackground />
+    <div className="app" style={{ background: '#070707', minHeight: '100vh', width: '100vw' }}>
       <WordCloud words={words} />
     </div>
   );
